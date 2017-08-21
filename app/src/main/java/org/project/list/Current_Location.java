@@ -4,14 +4,20 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
@@ -30,6 +36,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
@@ -39,6 +46,7 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -53,24 +61,26 @@ import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 import android.widget.ViewFlipper;
 import android.widget.AdapterView.OnItemClickListener;
 
 /**
-  Class to handle events regarding location updates, adding deleting 
-  
+  Class to handle events regarding location updates, adding deleting
+
   modifying lists
 
  */
 
 public class Current_Location extends MapActivity implements LocationListener,
-		OnClickListener, OnGestureListener, OnTouchListener 
+		OnClickListener, OnGestureListener, OnTouchListener
 {
 	// Variables for Location Detection
 	LocationManager locationManager;
@@ -81,7 +91,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 	public static final ArrayList<String> title = new ArrayList<String>();
 	public static final ArrayList<String> link = new ArrayList<String>();
 	long timeStamp = 0;
-	
+
 	// MainList variables
 	public static int update = 0;
 	public static String[] updateText = new String[5];
@@ -103,17 +113,28 @@ public class Current_Location extends MapActivity implements LocationListener,
 	private static final int SWIPE_MIN_DISTANCE = 20;
 	private static final int SWIPE_THRESHOLD_VELOCITY = 20;
 	private GestureDetector gestureScanner;
-	
+
 	// App id storage
 	String [] appid;
 	int lastUsed=2;
 
+	Button mps;
+
 	@Override
-	public void onCreate(Bundle savedInstanceState) 
+	public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.currentlist);
-		
+		mps= (Button) findViewById(R.id.ShowMap);
+
+		mps.setOnClickListener( new View.OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				Intent intent=new Intent(v.getContext(),MapsActivity.class);
+				startActivity(intent);
+			}
+		});
 		//Set the view for respective orientation 
 		onConfigurationChanged(getResources().getConfiguration());
 		// Save the context for future use
@@ -123,7 +144,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 		appid[0]="AIzaSyD3B2npE5NYhg2RrTDfYzXx1uG-7PJdWAc ";
 		appid[1]="AIzaSyD3B2npE5NYhg2RrTDfYzXx1uG-7PJdWAc ";
 		appid[2]="AIzaSyD3B2npE5NYhg2RrTDfYzXx1uG-7PJdWAc ";
-		
+
 		//If last known location is available show list using that
 		locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 		if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
@@ -133,11 +154,11 @@ public class Current_Location extends MapActivity implements LocationListener,
 		}
 		Location location = locationManager
 				.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-		if (location != null) 
+		if (location != null)
 		{
 			onLocationChanged(location);
 		}
-		
+
 		// Set the listeners for buttons 
 		View tempView = findViewById(R.id.BButton_MainList);
 		tempView.setOnClickListener(this);
@@ -145,7 +166,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 		tempView.setOnClickListener(this);
 		listTemp = (ListView) findViewById(R.id.List_Current);
 		listTemp.setOnTouchListener(this);
-		
+
 		//Application is running
 		isRunningInBackground = 0;
 
@@ -158,7 +179,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	protected void onResume() 
+	protected void onResume()
 	{
 		super.onResume();
 		//Application is running
@@ -166,7 +187,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	protected void onPause() 
+	protected void onPause()
 	{
 		super.onPause();
 		//Application is running in background
@@ -174,14 +195,14 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	protected void onRestart() 
+	protected void onRestart()
 	{
 		super.onRestart();
 		//Application is running
 		isRunningInBackground = 0;
 	}
 
-	public void onProviderDisabled(String provider) 
+	public void onProviderDisabled(String provider)
 	{
 		Log.v("GPS", "Disabled");
 
@@ -190,23 +211,23 @@ public class Current_Location extends MapActivity implements LocationListener,
 		startActivity(intent);
 	}
 
-	public void onProviderEnabled(String provider) 
+	public void onProviderEnabled(String provider)
 	{
 		Log.v("GPS", "Enabled");
 	}
 
-	public void onStatusChanged(String provider, int status, Bundle extras) 
+	public void onStatusChanged(String provider, int status, Bundle extras)
 	{
-		switch (status) 
+		switch (status)
 		{
 			case LocationProvider.OUT_OF_SERVICE:
 				Log.v("GPS", "Status Changed: Out of Service");
 				break;
-	
+
 			case LocationProvider.TEMPORARILY_UNAVAILABLE:
 				Log.v("GPS", "Status Changed: Temporarily Unavailable");
 				break;
-	
+
 			case LocationProvider.AVAILABLE:
 				Log.v("GPS", "Status Changed: Available");
 				break;
@@ -214,11 +235,11 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	public void onLocationChanged(Location location) 
+	public void onLocationChanged(Location location)
 	{
 		/** If location update is already received in 
 		last second then don't listen to this update */
-		if (Math.abs(System.currentTimeMillis() - timeStamp) > 40000) 
+		if (Math.abs(System.currentTimeMillis() - timeStamp) > 40000)
 		{
 			//Set the current timestamp
 			timeStamp = System.currentTimeMillis();
@@ -229,7 +250,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 			final Cursor tempCursor = sqlDb.rawQuery(
 					"select * from TASKS order by ID ASC", null);
 
-			if (tempCursor.getCount() > 0) 
+			if (tempCursor.getCount() > 0)
 			{
 				/** Prepare array lists for delete items, notify the user
 				   populate current list */
@@ -238,7 +259,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				ArrayList<String> items = new ArrayList<String>();
 				ArrayList<String> name = new ArrayList<String>();
 
-				for (int i = 0; i < tempCursor.getCount(); i++) 
+				for (int i = 0; i < tempCursor.getCount(); i++)
 				{
 					tempCursor.moveToNext();
 
@@ -249,16 +270,16 @@ public class Current_Location extends MapActivity implements LocationListener,
 							"MM/dd/yyyyHH:mm");
 					Date currentDate = new Date();
 					Date savedDate = null;
-					try 
+					try
 					{
 						savedDate = dateFormater.parse(tempDate + tempTime);
-					} 
-					catch (ParseException e) 
+					}
+					catch (ParseException e)
 					{
 						e.printStackTrace();
 					}
 					// Check if the task is already expired or not
-					if (currentDate.before(savedDate)) 
+					if (currentDate.before(savedDate))
 					{
 						// Add to the current list checking
 						String tempItem = tempCursor.getString(2);
@@ -269,24 +290,24 @@ public class Current_Location extends MapActivity implements LocationListener,
 						name.add(tempCursor.getString(1));
 						long timeDifference = savedDate.getTime()
 								- currentDate.getTime();
-						if (timeDifference <= 2 * 60 * 60 * 1000) 
+						if (timeDifference <= 2 * 60 * 60 * 1000)
 						{
 							/** If task is going to expire in 
 							   2 hours notify the user */
 							toNotify.add(tempCursor.getString(1));
 						}
-					} 
-					else 
+					}
+					else
 					{
 						toDelete.add(tempCursor.getString(1));
 					}
 				}
 
 				sqlDb.close();
-				try 
+				try
 				{
 					title.clear();
-					for (int j = 0; j < items.size(); j++) 
+					for (int j = 0; j < items.size(); j++)
 					{
 						String ywsid="";
 						switch(lastUsed)
@@ -311,7 +332,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 								+ "&long="
 								+ Double.toString(location.getLongitude())
 								+ "&radius=2.0&limit=3&ywsid="+ywsid;
-						
+
 						currentLongitude = location.getLongitude();
 						currentLatitude = location.getLatitude();
 
@@ -330,7 +351,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 
 						String inputLine;
 						String jsontext = "";
-						while ((inputLine = in.readLine()) != null) 
+						while ((inputLine = in.readLine()) != null)
 						{
 							jsontext = jsontext + inputLine;
 						}
@@ -344,10 +365,10 @@ public class Current_Location extends MapActivity implements LocationListener,
 						// Parse json 
 						String[] current_location = new String[8];
 						int i=0;
-						if (entries.length() != 0) 
+						if (entries.length() != 0)
 						{
 							title.add(name.get(j).toString());
-							for (i = 0; i < entries.length(); i++) 
+							for (i = 0; i < entries.length(); i++)
 							{
 								// Save the data for inserting
 								current_location[0] = name.get(j).toString();
@@ -374,18 +395,18 @@ public class Current_Location extends MapActivity implements LocationListener,
 								// Prepare the address
 								if (!(current_location[7] = post
 										.getString("address1"))
-										.contentEquals("")) 
+										.contentEquals(""))
 								{
 
 									if (!post.getString("address2")
-											.contentEquals("")) 
+											.contentEquals(""))
 									{
 										current_location[7] = current_location[7]
 												+ ","
 												+ post.getString("address2");
 
 										if (!post.getString("address3")
-												.contentEquals("")) 
+												.contentEquals(""))
 										{
 											current_location[7] = current_location[7]
 													+ ","
@@ -428,20 +449,20 @@ public class Current_Location extends MapActivity implements LocationListener,
 						}
 
 					}
-					
+
 					/** If there are task which can be done at this location 
 					   show them to the user */
 					listTemp = (ListView) findViewById(R.id.List_Current);
 					listTemp.setAdapter(new ArrayAdapter<String>(this,
 							android.R.layout.simple_list_item_1, title));
-					listTemp.setOnItemClickListener(new OnItemClickListener() 
+					listTemp.setOnItemClickListener(new OnItemClickListener()
 					{
 						public void onItemClick(AdapterView<?> parent,
-								View view, int position, long id) 
+								View view, int position, long id)
 						{
 							/* If user clicks on the list item then show the 
 							results obtained from yelp */
-							
+
 							DBHelper dbOpen = new DBHelper(savedContext,
 									"LBList", 3);
 							final SQLiteDatabase sqlDb = dbOpen
@@ -453,9 +474,9 @@ public class Current_Location extends MapActivity implements LocationListener,
 
 							final String[] location = new String[cursorTemp
 									.getCount()];
-							
 
-							for (int i = 0; i < cursorTemp.getCount(); i++) 
+
+							for (int i = 0; i < cursorTemp.getCount(); i++)
 							{
 								cursorTemp.moveToNext();
 								location[i] = cursorTemp.getString(2)
@@ -471,11 +492,11 @@ public class Current_Location extends MapActivity implements LocationListener,
 									savedContext);
 
 							builder.setItems(location,
-									new DialogInterface.OnClickListener() 
+									new DialogInterface.OnClickListener()
 							{
 										public void onClick(
 												DialogInterface dialog,
-												int item) 
+												int item)
 										{
 											/** if user click on the location 
 											then show it onto the map */
@@ -494,7 +515,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 							alert = builder.create();
 							alert.setCanceledOnTouchOutside(true);
 							alert.setButton("Ok",
-									new DialogInterface.OnClickListener() 
+									new DialogInterface.OnClickListener()
 							{
 										public void onClick(
 												DialogInterface dialog,
@@ -507,7 +528,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 
 						}
 					});
-					if (isRunningInBackground == 1) 
+					if (isRunningInBackground == 1)
 					{
 						/* If application is running in background 
 						we have to throw notification about current tasks */
@@ -524,12 +545,12 @@ public class Current_Location extends MapActivity implements LocationListener,
 						{
 							contentText = "Click to see the tasks to be done. ";
 						}
-						
-						if (!toNotify.isEmpty()) 
+
+						if (!toNotify.isEmpty())
 						{
 							contentText = contentText
 									+ "There are some tasks which will be expired in an hour , such as";
-							for (int i = 0; i < toNotify.size(); i++) 
+							for (int i = 0; i < toNotify.size(); i++)
 							{
 								contentText = contentText + " "
 										+ toNotify.get(i);
@@ -545,7 +566,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 
 						Intent notificationIntent = new Intent(this,
 								Current_Location.class);
-						
+
 						//Set flags for notification intent as well as notification
 						notificationIntent
 								.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -562,14 +583,14 @@ public class Current_Location extends MapActivity implements LocationListener,
 						{
 							notificationManager.notify(1, notification);
 						}
-					} 
-					else 
+					}
+					else
 					{
-						if (!toNotify.isEmpty()) 
+						if (!toNotify.isEmpty())
 						{
 							// Show an alert dialog about the expiring tasks
 							String message = "There are some tasks which will be expired in an hour , such as ";
-							for (int i = 0; i < toNotify.size(); i++) 
+							for (int i = 0; i < toNotify.size(); i++)
 							{
 								message = message + toNotify.get(i);
 							}
@@ -583,11 +604,11 @@ public class Current_Location extends MapActivity implements LocationListener,
 							alert = dialog.create();
 
 							alert.setButton("OK",
-									new DialogInterface.OnClickListener() 
+									new DialogInterface.OnClickListener()
 							{
 										public void onClick(
 												DialogInterface dialog,
-												int item) 
+												int item)
 										{
 											alert.dismiss();
 										}
@@ -596,22 +617,22 @@ public class Current_Location extends MapActivity implements LocationListener,
 							alert.show();
 						}
 					}
-					
+
 
 					tempCursor.close();
 					// Delete the expired tasks
 					dbOpen = new DBHelper(this, "LBList", 3);
 					sqlDb = dbOpen.getWritableDatabase();
 
-					for (int k = 0; k < toDelete.size(); k++) 
+					for (int k = 0; k < toDelete.size(); k++)
 					{
 						sqlDb.execSQL("delete from TASKS where NAME='"
 								+ toDelete.get(k).toString() + "'");
 					}
 					sqlDb.close();
 					dbOpen.close();
-				} 
-				catch (Exception e) 
+				}
+				catch (Exception e)
 				{
 					e.printStackTrace();
 				}
@@ -620,12 +641,12 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	public void onClick(View tempView) 
+	public void onClick(View tempView)
 	{
 		// Handle the click events for various buttons in an application
 		ViewFlipper vf = (ViewFlipper) findViewById(R.id.ViewFlipper01);
 
-		switch (tempView.getId()) 
+		switch (tempView.getId())
 		{
 			case R.id.BButton_MainList:
 				onCreateMainlist();
@@ -634,7 +655,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				vf.setDisplayedChild(1);
 				vf.showNext();
 				break;
-	
+
 			case R.id.Button_MapMainTask:
 				onCreateMainlist();
 				/*vf.setAnimation(AnimationUtils.loadAnimation(tempView.getContext(),
@@ -642,7 +663,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				vf.setDisplayedChild(1);
 				vf.showNext();
 				break;
-	
+
 			case R.id.Button_AddTask:
 				onCreateAdditem();
 				/*vf.setAnimation(AnimationUtils.loadAnimation(tempView.getContext(),
@@ -650,7 +671,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				vf.setDisplayedChild(2);
 				vf.showNext();
 				break;
-	
+
 			case R.id.Button_Add:
 				onCreateAdditem();
 				/*vf.setAnimation(AnimationUtils.loadAnimation(tempView.getContext(),
@@ -658,7 +679,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				vf.setDisplayedChild(2);
 				vf.showNext();
 				break;
-	
+
 			case R.id.Button_Home:
 				mainCursor.close();
 				/*vf.setAnimation(AnimationUtils.loadAnimation(tempView.getContext(),
@@ -666,14 +687,13 @@ public class Current_Location extends MapActivity implements LocationListener,
 				vf.setDisplayedChild(3);
 				vf.showNext();
 				break;
-	
+
 			case R.id.Button_CurrentList:
 			/*	vf.setAnimation(AnimationUtils.loadAnimation(tempView.getContext(),
 						R.anim.push_up_in));*/
 				vf.setDisplayedChild(3);
 				vf.showNext();
 				break;
-	
 			case R.id.Button_Save:
 				save();
 				if (incomplete) {
@@ -686,14 +706,16 @@ public class Current_Location extends MapActivity implements LocationListener,
 					vf.showNext();
 				}
 				break;
-	
+
 			case R.id.Button_Clear:
 				clear();
 				removeDialog(DATE_DIALOG_ID);
 				removeDialog(TIME_DIALOG_ID);
 				break;
-	
+
 			case R.id.Button_Discard:
+			case R.id.Button_Ok:
+			case R.id.Button_back:
 				onCreateMainlist();
 				removeDialog(DATE_DIALOG_ID);
 				removeDialog(TIME_DIALOG_ID);
@@ -701,30 +723,34 @@ public class Current_Location extends MapActivity implements LocationListener,
 						R.anim.push_left_in));*/
 				vf.setDisplayedChild(1);
 				vf.showNext();
-	
+
 			case R.id.Button_Background1:
 				CloseKeyboard(tempView);
+
 		}
+
+
 	}
 
+
 	@Override
-	protected boolean isRouteDisplayed() 
+	protected boolean isRouteDisplayed()
 	{
 		// Do nothing
 		return false;
 	}
 
-	public void onCreateMainlist() 
+	public void onCreateMainlist()
 	{
 		// Create main list from table TASKS
 		update = 0;
 		mainlistUpdate();
-		
+
 		ListView listMain = (ListView) findViewById(R.id.List_Item);
-		listMain.setOnItemClickListener(new OnItemClickListener() 
+		listMain.setOnItemClickListener(new OnItemClickListener()
 		{
 			public void onItemClick(AdapterView<?> parent, View view,
-					int position, long id) 
+					int position, long id)
 			{
 				final AlertDialog alert;
 
@@ -748,9 +774,9 @@ public class Current_Location extends MapActivity implements LocationListener,
 				itemlist[4] = "Time:" + updateText[4];
 
 				builder.setItems(itemlist,
-						new DialogInterface.OnClickListener() 
+						new DialogInterface.OnClickListener()
 				{
-							public void onClick(DialogInterface dialog, int item) 
+							public void onClick(DialogInterface dialog, int item)
 							{
 								// Do nothing
 							}
@@ -760,9 +786,9 @@ public class Current_Location extends MapActivity implements LocationListener,
 				alert = builder.create();
 				alert.setCanceledOnTouchOutside(true);
 				alert.setButton("Update",
-						new DialogInterface.OnClickListener() 
+						new DialogInterface.OnClickListener()
 				{
-							public void onClick(DialogInterface dialog, int item) 
+							public void onClick(DialogInterface dialog, int item)
 							{
 								update = 1;
 								// Prepare for update this task
@@ -777,18 +803,18 @@ public class Current_Location extends MapActivity implements LocationListener,
 				});
 
 				alert.setButton2("Cancel",
-						new DialogInterface.OnClickListener() 
+						new DialogInterface.OnClickListener()
 				{
-							public void onClick(DialogInterface dialog, int item) 
+							public void onClick(DialogInterface dialog, int item)
 							{
 								alert.dismiss();
 							}
 				});
 
 				alert.setButton3("Delete",
-						new DialogInterface.OnClickListener() 
+						new DialogInterface.OnClickListener()
 				{
-							public void onClick(DialogInterface dialog, int item) 
+							public void onClick(DialogInterface dialog, int item)
 							{	// Delete the corresponding task from database
 								DBHelper dbOpen = new DBHelper(
 										Current_Location.savedContext,
@@ -798,7 +824,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 								sqlDb.execSQL("DELETE FROM TASKS WHERE ID="
 										+ Integer.toString(pos));
 								sqlDb.close();
-								if (title.contains(updateText[0])) 
+								if (title.contains(updateText[0]))
 								{
 									title.remove(updateText[0]);
 									listTemp = (ListView) findViewById(R.id.List_Current);
@@ -826,7 +852,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 		listMain.setOnTouchListener(this);
 	}
 
-	public void mainlistUpdate() 
+	public void mainlistUpdate()
 	{
 		// Populate tasks into main list
 		ListView tempList = (ListView) findViewById(R.id.List_Item);
@@ -838,7 +864,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				.rawQuery("select * from TASKS order by ID ASC", null);
 
 		items.clear();
-		for (int i = 0; i < mainCursor.getCount(); i++) 
+		for (int i = 0; i < mainCursor.getCount(); i++)
 		{
 			mainCursor.moveToNext();
 			items.add(mainCursor.getString(1));
@@ -851,7 +877,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 		tempList.setTextFilterEnabled(true);
 	}
 
-	public void onCreateAdditem() 
+	public void onCreateAdditem()
 	{
 		// Prepare for add new task or update task respectively
 		View tempView = this.findViewById(R.id.Button_Save);
@@ -871,11 +897,11 @@ public class Current_Location extends MapActivity implements LocationListener,
 		tempTextview.setOnTouchListener(this);
 		tempTextview = (TextView) this.findViewById(R.id.Text_Description);
 		tempTextview
-				.setOnEditorActionListener(new TextView.OnEditorActionListener() 
+				.setOnEditorActionListener(new TextView.OnEditorActionListener()
 		{
 					@Override
 					public boolean onEditorAction(TextView v, int actionId,
-							KeyEvent event) 
+							KeyEvent event)
 					{
 						// If return or done close the keyboard
 						if (actionId == 0 || actionId == 6)
@@ -883,19 +909,16 @@ public class Current_Location extends MapActivity implements LocationListener,
 						return true;
 					}
 		});
-		
+
 		tempTextview = (TextView) this.findViewById(R.id.Text_Location);
-       EditText editText;
-		editText= (EditText) findViewById(R.id.Text_Location);
-		editText.
-		tempTextview
-				.setOnEditorActionListener(new TextView.OnEditorActionListener() 
+	tempTextview
+
+				.setOnEditorActionListener(new TextView.OnEditorActionListener()
 		{
 					@Override
 					public boolean onEditorAction(TextView v, int actionId,
-							KeyEvent event) 
+							KeyEvent event)
 					{
-						Intent intent = new Intent(this,MapsActivity.class);
 
 						// If return or done close the keyboard
 						if (actionId == 0 || actionId == 6)
@@ -904,15 +927,15 @@ public class Current_Location extends MapActivity implements LocationListener,
 						return true;
 					}
 		});
-		
-		
+
+
 		tempTextview = (TextView) this.findViewById(R.id.Text_Name);
 		tempTextview
-				.setOnEditorActionListener(new TextView.OnEditorActionListener() 
+				.setOnEditorActionListener(new TextView.OnEditorActionListener()
 		{
 					@Override
 					public boolean onEditorAction(TextView v, int actionId,
-							KeyEvent event) 
+							KeyEvent event)
 					{
 						// If return or done close the keyboard
 						if (actionId == 0 || actionId == 6)
@@ -921,7 +944,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 					}
 		});
 		// If task is being updated then set texts with previous data 
-		if (Current_Location.update == 1) 
+		if (Current_Location.update == 1)
 		{
 			tempTextview.setText(Current_Location.updateText[0]);
 			tempTextview = (TextView) this.findViewById(R.id.Text_Location);
@@ -932,25 +955,25 @@ public class Current_Location extends MapActivity implements LocationListener,
 			tempTextview.setText(Current_Location.updateText[3]);
 			tempTextview = (TextView) this.findViewById(R.id.Text_Time);
 			tempTextview.setText(Current_Location.updateText[4]);
-		} 
-		else 
+		}
+		else
 		{
 			// If new task then clear all the boxes
 			clear();
 		}
 	}
 
-	public void save() 
+	public void save()
 	{
 		String[] insertText = new String[5];
 		String message="";
 		incomplete = true;
 		TextView tempTextview = (TextView) this.findViewById(R.id.Text_Name);
 		insertText[0] = tempTextview.getText().toString();
-		
+
 		/** Check if the task is not already present in 
 		the table or it is not the update operation */
-		if (!items.contains(insertText[0]) || update==1) 
+		if (!items.contains(insertText[0]) || update==1)
 		{
 			tempTextview = (TextView) this.findViewById(R.id.Text_Location);
 			insertText[1] = tempTextview.getText().toString();
@@ -961,17 +984,17 @@ public class Current_Location extends MapActivity implements LocationListener,
 			tempTextview = (TextView) this.findViewById(R.id.Text_Time);
 			insertText[4] = tempTextview.getText().toString();
 			CloseKeyboard(tempTextview);
-			
+
 			// Check the date of each view with current date
 			SimpleDateFormat dateFormater = new SimpleDateFormat(
 					"MM/dd/yyyyHH:mm");
 			Date currentDate = new Date();
 			Date savedDate = null;
-			try 
+			try
 			{
 				savedDate = dateFormater.parse(insertText[3] + insertText[4]);
-			} 
-			catch (ParseException e) 
+			}
+			catch (ParseException e)
 			{
 				e.printStackTrace();
 			}
@@ -981,23 +1004,23 @@ public class Current_Location extends MapActivity implements LocationListener,
 				incomplete = false;
 			}
 			// Check if any of textboxes are empty
-			for (int i = 0; i < 5; i++) 
+			for (int i = 0; i < 5; i++)
 			{
 				insertText[i] = insertText[i].trim();
-				if (insertText[i].contentEquals("")) 
+				if (insertText[i].contentEquals(""))
 				{
 					incomplete = false;
 					message="All Fields Are Mandetory";
 				}
 			}
-			
-			if (incomplete) 
+
+			if (incomplete)
 			{
 				// If all the boxes are filled then prepare query 
 				DBHelper dbOpen = new DBHelper(this, "LBList", 3);
 				SQLiteDatabase sqlDb = dbOpen.getWritableDatabase();
 
-				if (Current_Location.update == 0) 
+				if (Current_Location.update == 0)
 				{
 					sqlDb.execSQL("INSERT OR REPLACE INTO TASKS (NAME,LOCATION,DESCRIPTION,DATE,TIME)VALUES ('"
 							+ insertText[0]
@@ -1009,8 +1032,8 @@ public class Current_Location extends MapActivity implements LocationListener,
 							+ insertText[3]
 							+ "','"
 							+ insertText[4] + "')");
-				} 
-				else 
+				}
+				else
 				{
 					sqlDb.execSQL("INSERT OR REPLACE INTO TASKS VALUES ('"
 							+ Integer.toString(Current_Location.pos) + "','"
@@ -1021,8 +1044,8 @@ public class Current_Location extends MapActivity implements LocationListener,
 
 				sqlDb.close();
 				update = 0;
-			} 
-			else 
+			}
+			else
 			{
 				//If any of the field is empty alert the user
 				final AlertDialog alert;
@@ -1032,17 +1055,17 @@ public class Current_Location extends MapActivity implements LocationListener,
 				builder.setMessage(message);
 				alert = builder.create();
 				alert.setCanceledOnTouchOutside(true);
-				alert.setButton("OK", new DialogInterface.OnClickListener() 
+				alert.setButton("OK", new DialogInterface.OnClickListener()
 				{
-					public void onClick(DialogInterface dialog, int item) 
+					public void onClick(DialogInterface dialog, int item)
 					{
 						alert.dismiss();
 					}
 				});
 				alert.show();
 			}
-		} 
-		else 
+		}
+		else
 		{
 			// If task is already present then inform the user
 			incomplete = false;
@@ -1052,9 +1075,9 @@ public class Current_Location extends MapActivity implements LocationListener,
 			alert.setCancelable(true);
 			alert.setCanceledOnTouchOutside(true);
 
-			alert.setButton("Ok", new DialogInterface.OnClickListener() 
+			alert.setButton("Ok", new DialogInterface.OnClickListener()
 			{
-				public void onClick(DialogInterface dialog, int item) 
+				public void onClick(DialogInterface dialog, int item)
 				{
 					alert.dismiss();
 				}
@@ -1063,7 +1086,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 		}
 	}
 
-	public void clear() 
+	public void clear()
 	{
 		// Set all the text views to blank
 		TextView tempName = (TextView) this.findViewById(R.id.Text_Name);
@@ -1081,22 +1104,22 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	protected Dialog onCreateDialog(int id) 
-	{	
+	protected Dialog onCreateDialog(int id)
+	{
 		// Prepare dialog for either for picking date or time
-		
+
 		Calendar c = Calendar.getInstance();
 		int cyear = c.get(Calendar.YEAR);
 		int cmonth = c.get(Calendar.MONTH);
 		int cday = c.get(Calendar.DAY_OF_MONTH);
-		
-		
-		switch (id) 
+
+
+		switch (id)
 		{
 			case DATE_DIALOG_ID:
 				return new DatePickerDialog(this, mDateSetListener, cyear, cmonth,
 						cday);
-	
+
 			case TIME_DIALOG_ID:
 				return new TimePickerDialog(this, mTimeSetListener,
 						c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true);
@@ -1104,34 +1127,34 @@ public class Current_Location extends MapActivity implements LocationListener,
 		return null;
 	}
 
-	private DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() 
-	{	
+	private DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener()
+	{
 		/** Dialog for setting the picked date to the textbox
 		and his onDateSet method */
 		public void onDateSet(DatePicker view, int year, int monthOfYear,
-				int dayOfMonth) 
+				int dayOfMonth)
 		{
 			selectedDate = String.valueOf(monthOfYear + 1) + "/"
 					+ String.valueOf(dayOfMonth) + "/" + String.valueOf(year);
 			TextView temp_date = (TextView) findViewById(R.id.Text_Date);
 			temp_date.setText(selectedDate);
-			
+
 		}
 	};
 
-	private TimePickerDialog.OnTimeSetListener mTimeSetListener = new TimePickerDialog.OnTimeSetListener() 
+	private TimePickerDialog.OnTimeSetListener mTimeSetListener = new TimePickerDialog.OnTimeSetListener()
 	{
 		/** Dialog for setting the picked time to the textbox
 		and his onTimeSet method */
-		public void onTimeSet(TimePicker view, int hourOfDay, int minute) 
+		public void onTimeSet(TimePicker view, int hourOfDay, int minute)
 		{
 			selectedTime = "";
-			if (hourOfDay < 10) 
+			if (hourOfDay < 10)
 			{
 				selectedTime = "0";
 			}
 			selectedTime = selectedTime + hourOfDay + ":";
-			if (minute < 10) 
+			if (minute < 10)
 			{
 				selectedTime = selectedTime + "0";
 			}
@@ -1142,20 +1165,20 @@ public class Current_Location extends MapActivity implements LocationListener,
 	};
 
 	@Override
-	public boolean onTouchEvent(MotionEvent me) 
+	public boolean onTouchEvent(MotionEvent me)
 	{
 		// Return our gesture scanner
 		return gestureScanner.onTouchEvent(me);
 	}
 
-	void CloseKeyboard(View tempView) 
+	void CloseKeyboard(View tempView)
 	{	// Close the soft keyboard
 		InputMethodManager imm = (InputMethodManager) this
 				.getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(tempView.getWindowToken(), 0);
 	}
 
-	public void onCreateMap(String name) 
+	public void onCreateMap(String name)
 	{	// Prepare map for the user
 
 		MapView mapView = (MapView) findViewById(R.id.mapview);
@@ -1198,7 +1221,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 		}
 		Location location = locationManager
 		.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-		if (location != null) 
+		if (location != null)
 		{
 			currentLatitude=location.getLatitude();
 			currentLongitude=location.getLongitude();
@@ -1226,11 +1249,11 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	public void onConfigurationChanged(Configuration newConfig) 
+	public void onConfigurationChanged(Configuration newConfig)
 	{	// Change the width of the views corresponding to orientation
 		super.onConfigurationChanged(newConfig);
 		View tempView;
-		if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) 
+		if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)
 		{
 			tempView = findViewById(R.id.Button_Save);
 			LayoutParams param = tempView.getLayoutParams();
@@ -1276,34 +1299,34 @@ public class Current_Location extends MapActivity implements LocationListener,
 			param = tempView.getLayoutParams();
 			param.width = 240;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Description);
 			param = tempView.getLayoutParams();
 			param.width = 310;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Date);
 			param = tempView.getLayoutParams();
 			param.width = 310;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Location);
 			param = tempView.getLayoutParams();
 			param.width = 310;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Name);
 			param = tempView.getLayoutParams();
 			param.width = 310;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Time);
 			param = tempView.getLayoutParams();
 			param.width = 310;
 			tempView.setLayoutParams(param);
-			
-		} 
-		else 
+
+		}
+		else
 		{
 			tempView = findViewById(R.id.Button_Save);
 			LayoutParams param = tempView.getLayoutParams();
@@ -1349,27 +1372,27 @@ public class Current_Location extends MapActivity implements LocationListener,
 			param = tempView.getLayoutParams();
 			param.width = 160;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Description);
 			param = tempView.getLayoutParams();
 			param.width = 190;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Date);
 			param = tempView.getLayoutParams();
 			param.width = 190;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Location);
 			param = tempView.getLayoutParams();
 			param.width = 190;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Name);
 			param = tempView.getLayoutParams();
 			param.width = 190;
 			tempView.setLayoutParams(param);
-			
+
 			tempView = findViewById(R.id.Text_Time);
 			param = tempView.getLayoutParams();
 			param.width = 190;
@@ -1378,7 +1401,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	public boolean onDown(MotionEvent e) 
+	public boolean onDown(MotionEvent e)
 	{
 		// Do nothing
 		return false;
@@ -1386,17 +1409,17 @@ public class Current_Location extends MapActivity implements LocationListener,
 
 	@Override
 	public boolean onFling(MotionEvent firsttouch, MotionEvent lasttouch,
-			float velocityX, float velocityY) 
+			float velocityX, float velocityY)
 	{	// We will check for the swipe in this method
-		try 
+		try
 		{
 			// right to left swipe
 			if (firsttouch.getX() - lasttouch.getX() > SWIPE_MIN_DISTANCE
-					&& Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) 
-			{	/** Get the view shown to the user and 
+					&& Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
+			{	/** Get the view shown to the user and
 				show the corresponding next view to the user */
 				ViewFlipper vf = (ViewFlipper) findViewById(R.id.ViewFlipper01);
-				switch (vf.getDisplayedChild()) 
+				switch (vf.getDisplayedChild())
 				{
 					case 0:
 						onCreateMainlist();
@@ -1424,10 +1447,10 @@ public class Current_Location extends MapActivity implements LocationListener,
 			}
 			// Left to right swipe
 			else if (lasttouch.getX() - firsttouch.getX() > SWIPE_MIN_DISTANCE
-					&& Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) 
+					&& Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY)
 			{
 				ViewFlipper vf = (ViewFlipper) findViewById(R.id.ViewFlipper01);
-				switch (vf.getDisplayedChild()) 
+				switch (vf.getDisplayedChild())
 				{
 					case 0:
 						onCreateAdditem();
@@ -1453,8 +1476,8 @@ public class Current_Location extends MapActivity implements LocationListener,
 						break;
 					}
 			}
-		} 
-		catch (Exception e) 
+		}
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
@@ -1462,46 +1485,102 @@ public class Current_Location extends MapActivity implements LocationListener,
 	}
 
 	@Override
-	public void onLongPress(MotionEvent e) 
+	public void onLongPress(MotionEvent e)
 	{	// Do nothing
 	}
 
 	@Override
 	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
-			float distanceY) 
+			float distanceY)
 	{	// Do nothing
 		return false;
 	}
 
 	@Override
-	public void onShowPress(MotionEvent e) 
+	public void onShowPress(MotionEvent e)
 	{	// Do nothing
 	}
 
 	@Override
-	public boolean onSingleTapUp(MotionEvent e) 
+	public boolean onSingleTapUp(MotionEvent e)
 	{	// Do nothing
 		return false;
 	}
 
 	@Override
-	public boolean onTouch(View tempView, MotionEvent event) 
+	public boolean onTouch(View tempView, MotionEvent event)
 	{
 		//Show the corresponding dialog or send to gesture controller
-		switch (tempView.getId()) 
+		switch (tempView.getId())
 		{
 			case R.id.Text_Date:
 				showDialog(DATE_DIALOG_ID);
 				return false;
-	
+
 			case R.id.Text_Time:
 				showDialog(TIME_DIALOG_ID);
 				return false;
-	
 			default:
 				if (tempView.getId() == R.id.Scroll_Add)
 					CloseKeyboard(tempView);
 				return gestureScanner.onTouchEvent(event);
 		}
 	}
+
+
+	public void showNotification() {
+		PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, Current_Location.class), 0);
+		Resources r = getResources();
+		Notification notification = new NotificationCompat.Builder(this)
+				.setTicker(r.getString(R.string.app_name))
+				.setSmallIcon(R.drawable.appicon)
+				.setContentTitle(r.getString(R.string.New_Task))
+				.setContentText(r.getString(R.string.StartTask))
+				.setContentIntent(pi)
+				.setAutoCancel(true)
+				.build();
+
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		notificationManager.notify(0, notification);
+	}
+	public void Remind(){
+
+// Now formattedDate have current date/time
+
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+1:00"));
+		Date currentLocalTime = cal.getTime();
+		DateFormat date = new SimpleDateFormat("HH:mm ");
+
+// you can get seconds by adding  "...:ss" to it
+		date.setTimeZone(TimeZone.getTimeZone("GMT+3:00"));
+
+		String localTime = date.format(currentLocalTime);
+		Toast.makeText(Current_Location.this,localTime, Toast.LENGTH_LONG).show();
+		Toast.makeText(Current_Location.this,selectedTime, Toast.LENGTH_LONG).show();
+
+		if (localTime.equals(selectedTime)){
+			showNotification();
+		}else Remind();
+	}
+	public String stime(){
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+1:00"));
+		Date currentLocalTime = cal.getTime();
+		DateFormat date = new SimpleDateFormat("HH:mm ");
+
+// you can get seconds by adding  "...:ss" to it
+		date.setTimeZone(TimeZone.getTimeZone("GMT+3:00"));
+
+		String localTime = date.format(currentLocalTime);
+		return localTime;
+	}
+	public void backgd(){
+		for (int i=0;;i++){
+			if (stime().equals(selectedTime)){
+				showNotification();
+			break;
+			}
+		}
+	}
+
+
 }

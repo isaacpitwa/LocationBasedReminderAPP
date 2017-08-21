@@ -7,10 +7,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 /**
 Class to handle database operation
-
-Solves CS185c Section 3 Project LBTask
-
-@author Nakul Natu(007224360) and Tarun Ramaswamy(007475208)
 */
 public class DBHelper extends SQLiteOpenHelper 
 {

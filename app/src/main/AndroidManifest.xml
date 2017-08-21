@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.project.list" android:versionCode="1" android:versionName="1.0">
-	<application android:icon="@drawable/appicon" android:label="@string/app_name" android:debuggable="true">
-	<uses-library android:name="com.google.android.maps" />
+	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+	<application android:icon="@drawable/appicon" android:label="@string/app_name" >
+		<uses-library android:name="com.google.android.maps" />
 
 		
 		<activity android:name="Current_Location" android:launchMode="singleTask"  android:configChanges="keyboardHidden|orientation">
@@ -11,11 +15,15 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
-		
-		
-	</application>
-	<uses-sdk android:minSdkVersion="4" />
+		<activity
+			android:name=".MapsActivity"
+			android:label="@string/title_activity_maps">
+		</activity>
+		<meta-data
+			android:name="com.google.android.geo.API_KEY"
+			android:value="@string/google_maps_key" />
 
-<uses-permission android:name="android.permission.INTERNET"></uses-permission>
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
-</manifest> 
+
+	</application>
+	<uses-sdk android:minSdkVersion="16" />
+</manifest>

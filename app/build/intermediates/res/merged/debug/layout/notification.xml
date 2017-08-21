@@ -1,7 +1,4 @@
-<!-- 185 C Section 3 -->
-<!-- Project LBTask -->
-<!-- Written By Nakul Natu(007224360) -->
-<!-- Tarun Ramaswamy(007475208) -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="horizontal"
               android:layout_width="fill_parent"

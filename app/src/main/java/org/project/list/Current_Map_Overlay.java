@@ -25,9 +25,6 @@ import com.google.android.maps.OverlayItem;
 /**
 Class to handle google map
 
-Solves CS185c Section 3 Project LBTask
-
-@author Nakul Natu(007224360) and Tarun Ramaswamy(007475208)
 */
 
 @SuppressWarnings("rawtypes")
