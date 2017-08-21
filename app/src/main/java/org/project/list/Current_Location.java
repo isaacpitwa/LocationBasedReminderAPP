@@ -44,6 +44,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
@@ -696,8 +697,14 @@ public class Current_Location extends MapActivity implements LocationListener,
 				break;
 			case R.id.Button_Save:
 				save();
+				AsyncTask.execute(new Runnable() {
+					@Override
+					public void run() {
+						Remind();
+					}
+				});
 				Toast.makeText(Current_Location.this,"Saved successfully", Toast.LENGTH_LONG).show();
-				showNotification();
+
 				if (incomplete) {
 					onCreateMainlist();
 					removeDialog(DATE_DIALOG_ID);
@@ -730,10 +737,7 @@ public class Current_Location extends MapActivity implements LocationListener,
 				CloseKeyboard(tempView);
 
 		}
-
-
 	}
-
 
 	@Override
 	protected boolean isRouteDisplayed()
@@ -1546,23 +1550,26 @@ public class Current_Location extends MapActivity implements LocationListener,
 		notificationManager.notify(0, notification);
 	}
 	public void Remind(){
-
 // Now formattedDate have current date/time
-
+		showNotification();
+		try {
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+1:00"));
 		Date currentLocalTime = cal.getTime();
 		DateFormat date = new SimpleDateFormat("HH:mm ");
 
 // you can get seconds by adding  "...:ss" to it
 		date.setTimeZone(TimeZone.getTimeZone("GMT+3:00"));
-
 		String localTime = date.format(currentLocalTime);
-		Toast.makeText(Current_Location.this,localTime, Toast.LENGTH_LONG).show();
-		Toast.makeText(Current_Location.this,selectedTime, Toast.LENGTH_LONG).show();
+			while (selectedTime!=localTime) {
+				Thread.sleep(2 * 1000);
+				continue;
 
-		if (localTime.equals(selectedTime)){
-			showNotification();
-		}else Remind();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+
 	}
 	public String stime(){
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+1:00"));
@@ -1575,14 +1582,8 @@ public class Current_Location extends MapActivity implements LocationListener,
 		String localTime = date.format(currentLocalTime);
 		return localTime;
 	}
-	public void backgd(){
-		for (int i=0;;i++){
-			if (stime().equals(selectedTime)){
-				showNotification();
-			break;
-			}
-		}
-	}
+
+
 
 
 }
