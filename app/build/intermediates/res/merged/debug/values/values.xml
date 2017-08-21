@@ -256,7 +256,7 @@
     <integer name="google_play_services_version">8487000</integer>
     <integer name="status_bar_notification_info_maxnum">999</integer>
     <string name="New_Task">New task</string>
-    <string name="StartTask">New Reminder Task has been set</string>
+    <string name="StartTask"> Task has been perfomed in this vicinity</string>
     <string name="abc_action_bar_home_description">Navigate home</string>
     <string name="abc_action_bar_home_description_format">%1$s, %2$s</string>
     <string name="abc_action_bar_home_subtitle_description_format">%1$s, %2$s, %3$s</string>
@@ -329,6 +329,7 @@
     <string name="mr_user_route_category_name">Devices</string>
     <string name="place_autocomplete_clear_button">Clear search</string>
     <string name="place_autocomplete_search_hint">Search</string>
+    <string name="saved">New task has been saved</string>
     <string name="status_bar_notification_info_overflow">999+</string>
     <string name="store_picture_message">"Allow Ad to store image in Picture gallery?"</string>
     <string name="store_picture_title">Save image</string>

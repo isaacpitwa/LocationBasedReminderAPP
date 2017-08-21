@@ -2559,10 +2559,11 @@ containing a value of this type.
         public static final int mr_user_route_category_name=0x7f06003a;
         public static final int place_autocomplete_clear_button=0x7f06003b;
         public static final int place_autocomplete_search_hint=0x7f06003c;
+        public static final int saved=0x7f06004c;
         public static final int status_bar_notification_info_overflow=0x7f06003d;
-        public static final int store_picture_message=0x7f06004c;
-        public static final int store_picture_title=0x7f06004d;
-        public static final int title_activity_maps=0x7f06004e;
+        public static final int store_picture_message=0x7f06004d;
+        public static final int store_picture_title=0x7f06004e;
+        public static final int title_activity_maps=0x7f06004f;
         public static final int wallet_buy_button_place_holder=0x7f06003e;
     }
     public static final class style {

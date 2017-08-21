@@ -3,6 +3,7 @@
     
     <string name="app_name">JUKIILA</string>
     <string name="New_Task">New task</string>
-    <string name="StartTask">New Reminder Task has been set</string>
+    <string name="StartTask"> Task has been perfomed in this vicinity</string>
     <string name="title_activity_maps">Map</string>
+    <string name="saved">New task has been saved</string>
 </resources>

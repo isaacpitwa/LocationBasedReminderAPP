@@ -1007,10 +1007,11 @@ int string mr_system_route_name 0x7f060039
 int string mr_user_route_category_name 0x7f06003a
 int string place_autocomplete_clear_button 0x7f06003b
 int string place_autocomplete_search_hint 0x7f06003c
+int string saved 0x7f06004c
 int string status_bar_notification_info_overflow 0x7f06003d
-int string store_picture_message 0x7f06004c
-int string store_picture_title 0x7f06004d
-int string title_activity_maps 0x7f06004e
+int string store_picture_message 0x7f06004d
+int string store_picture_title 0x7f06004e
+int string title_activity_maps 0x7f06004f
 int string wallet_buy_button_place_holder 0x7f06003e
 int style AlertDialog_AppCompat 0x7f090087
 int style AlertDialog_AppCompat_Light 0x7f090088

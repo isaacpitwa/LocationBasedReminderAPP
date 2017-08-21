@@ -696,6 +696,8 @@ public class Current_Location extends MapActivity implements LocationListener,
 				break;
 			case R.id.Button_Save:
 				save();
+				Toast.makeText(Current_Location.this,"Saved successfully", Toast.LENGTH_LONG).show();
+				showNotification();
 				if (incomplete) {
 					onCreateMainlist();
 					removeDialog(DATE_DIALOG_ID);
